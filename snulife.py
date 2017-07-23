@@ -117,6 +117,7 @@ class Snulife(object):
         if self.is_same():
             print 'no new post'
         else:
+            print 'got new post'
             with open(Snulife.saved, 'wb') as f:
                 pk.dump(self.titles, f)
                 self.send_email(title, sender, receiver, password)
@@ -202,6 +203,9 @@ def main():
             try:
                 snulife.crawl(url=url, class_name=class_name, regex=regex)\
                     .noti(title=title, sender=sender, receiver=receiver, password=gmail_password)
+                print 'sleep ...'
+                sleep(5)
+                print 'wake up !!!'
             except Exception as e:
                 print 'fail'
                 print e
