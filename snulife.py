@@ -10,6 +10,7 @@ from email.mime.text import MIMEText
 import argparse
 import platform
 import re
+import os
 
 
 GMAIL_ACCOUNT = '<account without @gmail.com>'
@@ -88,8 +89,10 @@ class Snulife(object):
         return self
 
     def is_same(self):
-        with open(Snulife.saved) as f:
-            return pk.load(f) == self.titles
+        if os.path.isfile(Snulife.saved):
+            with open(Snulife.saved) as f:
+                return pk.load(f) == self.titles
+        return False
 
     def make_content(self):
         return '\n'.join(chain(*zip(self.titles, self.links)))
