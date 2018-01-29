@@ -72,7 +72,8 @@ def main():
     gmail_password = args['password'] or ''
     receiver = [email.strip() for email in (args['receiver'] or '').split(',')]
     title = to_unicode(args['title'] or TITLE)
-    url = args['url'] or SNULIFE_CONSTANT['target']
+    boards = args['boards']
+    keywords = args['keywords']
     regex = to_unicode(args['filter'] or '')
     keep_running = args['keep_running']
     class_name = args['class_name'] or SNULIFE_CONSTANT['post_class']
@@ -81,7 +82,7 @@ def main():
     if keep_running:
         while(True):
             try:
-                snulife.crawl(url=url, class_name=class_name, regex=regex)\
+                snulife.crawl(boards=boards, keywords=keywords, class_name=class_name, regex=regex)\
                     .noti(title=title, sender=sender, receiver=receiver, password=gmail_password)
                 print('sleep ...')
                 sleep(5)
@@ -92,7 +93,7 @@ def main():
                 print('wake up !!!')
             break
     else:
-        snulife.crawl(url=url, class_name=class_name, regex=regex)\
+        snulife.crawl(boards=boards, keywords=keywords, class_name=class_name, regex=regex)\
             .noti(title=title, sender=sender, receiver=receiver, password=gmail_password)
 
 

@@ -12,7 +12,7 @@ from helpers import EmailHandler
 
 
 class Snulife(object):
-    saved = './tmp.pkl'
+    saved = 'cache/snulife.pkl'
 
     data = {'act': 'procMemberLogin',
             'mid': 'main',
@@ -33,8 +33,40 @@ class Snulife(object):
               'Referer': 'http://snulife.com/main',
               'Upgrade-Insecure-Requests': '1'}
 
+    board_map = {
+        '자유게시판': 'gongsage',
+        '사랑방': 'love',
+        '서울대광장': 'snuplaza',
+        '재테크': 'invest',
+        '스누지식인': 'snukin',
+        '학부생라운지': 'student',
+        '원생라운지': 'postgraduate',
+        '졸업생라운지': 'graduate',
+        'Global Lounge': 'global',
+        '동아리홍보': 'clubad',
+        '교내행사홍보': 'schoolad',
+        '독강게시판': 'lecture_community',
+        '강의교환': 'lecture_exchange',
+        '족보요청': 'lecture_exam_want',
+        '취업게시판': 'career_board',
+        '고시게시판': 'examination',
+        '유학게시판': 'abroad',
+        '전문대학원': 'gradschool',
+        '창업게시판': 'foundation',
+        '스터디게시판': 'study',
+        '학과정보': 'major_board',
+        '벼룩시장': 'market',
+        '제휴이벤트': 'event',
+        '스누복덕방': 'housing',
+        '교재4989': 'book',
+        '분실물찾기': 'lostfound',
+        '과외구하기': 'lesson',
+        '구인게시판': 'partjob',
+        '맛집제보하기': 'gourmet_recommend',
+    }
+
     login = 'https://snulife.com/'
-    board_url = 'https://snulife.com/?act=&vid=&mid={board}&category=&search_keyword={keyword}
+    board_url = 'https://snulife.com/?act=&vid=&mid={board}&category=&search_keyword={keyword}&search_target=title_content'
 
     def __init__(self, user_id, password):
         self.s = requests.session()
@@ -90,14 +122,14 @@ class Snulife(object):
             print('New posts', '\n'.join(chain(*new_posts)), sep='\n')
             EmailHandler.send_email(title, sender, receiver, content, password)
 
-    def build_urls(boards='', keywords=''):
+    def build_urls(self, boards='', keywords=''):
         urls = []
-        for board in map(lambda x: x.strip(), boards.split(',')):
+        for board in map(lambda x: self.board_map[x.strip()], boards.split(',')):
             for keyword in map(lambda x: x.strip(), keywords.split(',')):
                 urls.append(self.board_url.format(board=board, keyword=keyword))
         return urls
 
     def crawl(self, boards='', keywords='', class_name='', regex=''):
         urls = self.build_urls(boards, keywords)
-        self.connect().get(url).find_all(class_name, regex)
+        self.connect().get(urls).find_all(class_name, regex)
         return self
