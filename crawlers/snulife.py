@@ -82,7 +82,7 @@ class Snulife(object):
     }
 
     login = 'https://snulife.com/'
-    board_url = 'https://snulife.com/?act=&vid=&mid={board}&category=&search_keyword={keyword}&search_target=title_content'
+    board_url = 'https://snulife.com/?act=&vid=&mid={board}&category=&search_keyword={keyword}&search_target=title_content&page={page}'
 
     def __init__(self, user_id, password):
         self.db = DbManager(__file__)
@@ -151,8 +151,9 @@ class Snulife(object):
         url_infos = []
         for board in map(lambda x: cls.board_map[x], boards):
             for keyword in keywords:
-                url = cls.board_url.format(board=board, keyword=keyword)
-                url_infos.append(UrlInfo(board, keyword, url))
+                for page in range(1, 3):
+                    url = cls.board_url.format(board=board, keyword=keyword, page=page)
+                    url_infos.append(UrlInfo(board, keyword, url))
         return url_infos
 
     def __get_htmls(self, url_infos):
