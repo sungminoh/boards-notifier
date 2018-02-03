@@ -45,7 +45,8 @@ class DbManager(object):
         return self
 
     def connect(self):
-        self.conn = sqlite3.connect(os.path.join('cache', self.table + '.db'))
+        db_file = os.path.join(os.path.dirname(__file__), 'cache', self.table + '.db')
+        self.conn = sqlite3.connect(db_file)
 
     def contains(self, id):
         sql = f'select id from {self.table} where id = ?'
