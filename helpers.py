@@ -8,7 +8,7 @@ import os
 class EmailHandler(object):
     @staticmethod
     def send_email(subject, sender, receiver, content, password=''):
-        msg = MIMEText(content.encode('utf-8'), _charset='utf-8')
+        msg = MIMEText(content.encode('utf-8'), 'html', _charset='utf-8')
         msg['Subject'] = subject
         msg['From'] = sender
         msg['To'] = ', '.join(receiver)

@@ -99,7 +99,6 @@ class Snulife(object):
     def noti(self, title, sender, receiver, content='', password=''):
         if self.new_posts:
             content = self.__build_content(self.new_posts)
-            print(content)
             EmailHandler.send_email(title, sender, receiver, content, password)
         else:
             print('No new posts')
@@ -107,7 +106,6 @@ class Snulife(object):
     @staticmethod
     def __build_content(posts):
         def post2row(post):
-            print(post.dt)
             dt = datetime.strptime(post.dt, '%Y.%m.%d %H:%M')
             if dt.hour == 0 and dt.minute == 0:
                 dt = dt.strftime('%y.%m.%d')
@@ -149,11 +147,11 @@ class Snulife(object):
     def __build_urls(cls, boards, keywords):
         UrlInfo = namedtuple('UrlInfo', ['board', 'keyword', 'url'])
         url_infos = []
-        for board in map(lambda x: cls.board_map[x], boards):
+        for board, board_name in map(lambda x: (cls.board_map[x], x), boards):
             for keyword in keywords:
                 for page in range(1, 3):
                     url = cls.board_url.format(board=board, keyword=keyword, page=page)
-                    url_infos.append(UrlInfo(board, keyword, url))
+                    url_infos.append(UrlInfo(board_name, keyword, url))
         return url_infos
 
     def __get_htmls(self, url_infos):
