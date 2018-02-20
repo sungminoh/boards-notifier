@@ -1,40 +1,15 @@
 # -*- coding: utf-8 -*-
-import grequests
-import requests
-from lxml import html
-from itertools import chain
-import pickle as pk
 from datetime import datetime
 import re
-import os
-from collections import namedtuple
 
-from helpers import EmailHandler, DbManager
-
-class Post(object):
-    def __init__(self, id, title, url, board, keyword, dt):
-        self.id = id
-        self.title = title
-        self.url = url
-        self.board = board
-        self.keyword = keyword
-        self.dt = dt
-
-    def __str__(self):
-        return f'Post({self.__dict__})'
-
-    def __repr__(self):
-        return str(self)
+from crawlers.crawler import Crawler, Post
 
 
-class Snulife(object):
-    saved = 'cache/snulife.pkl'
-
+class Snulife(Crawler):
     data = {'act': 'procMemberLogin',
             'mid': 'main',
             'success_return_url': 'http://snulife.com/main',
             'keep_signed': 'Y'}
-
     header = {'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
               'Accept-Encoding': 'gzip, deflate, br',
               'Accept-Language': 'en-US,en;q=0.8,ko;q=0.6',
@@ -48,7 +23,6 @@ class Snulife(object):
               'Pragma': 'no-cache',
               'Referer': 'http://snulife.com/main',
               'Upgrade-Insecure-Requests': '1'}
-
     board_map = {
         '자유게시판': 'gongsage',
         '사랑방': 'love',
@@ -81,157 +55,33 @@ class Snulife(object):
         '맛집제보하기': 'gourmet_recommend',
     }
 
-    login = 'https://snulife.com/'
+    login_url = 'https://snulife.com/'
     board_url = 'https://snulife.com/?act=&vid=&mid={board}&category=&search_keyword={keyword}&search_target=title_content&page={page}'
 
     def __init__(self, user_id, password):
-        self.db = DbManager(__file__)
-        self.db.create(('title', 'text'), ('url', 'text'), ('board', 'text'),
-                       ('keyword', 'text'), ('dt', 'text'))
-        self.session = requests.session()
+        super().__init__()
         self.data['user_id'] = user_id
         self.data['password'] = password
-        self.boards = None
-        self.keywords = None
-        self.posts = None
-        self.new_posts = None
-
-    def noti(self, title, sender, receiver, content='', password=''):
-        if self.new_posts:
-            content = self.__build_content(self.new_posts)
-            EmailHandler.send_email(title, sender, receiver, content, password)
-        else:
-            print('No new posts')
+        self._connect()
 
     @staticmethod
-    def __build_content(posts):
-        def post2row(post):
-            dt = datetime.strptime(post.dt, '%Y.%m.%d %H:%M')
-            if dt.hour == 0 and dt.minute == 0:
-                dt = dt.strftime('%y.%m.%d')
-            else:
-                dt = dt.strftime('%H:%M')
-            return str(f'''<tr><td style="text-align: center;">{dt}</td>
-                       <td><a href={post.url}>{post.title}</a></td>
-                       <td style="text-align: center;">{post.keyword}</td>
-                       <td style="text-align: center;">{post.board}</td></tr>''')
-        return str(f'''
-                   <html>
-                    <head></head>
-                    <body>
-                        <p>{datetime.now().strftime('%Y.%m.%d')} 스누라이프 새글입니다.</p></br>
-                        <table style="width:100%">
-                            <tr><th>게시일</th><th>제목</th><th>키워드</th><th>게시판</th></tr>
-                            {''.join(map(post2row, posts))}
-                        </table>
-                    </body>
-                   </html>''')
-
-    def crawl(self, boards='', keywords='', regex=''):
-        self.boards = [board.strip() for board in boards.split(',')]
-        self.keywords = [keyword.strip() for keyword in keywords.split(',')]
-        url_infos = self.__build_urls(self.boards, self.keywords)
-        self.__connect()
-        html_infos = self.__get_htmls(url_infos)
-        posts = self.__find_all(html_infos, regex)
-        self.posts = self.__groupByAppend(posts, ['id'], 'keyword')
-        self.__save(self.posts)
-        return self
-
-    def __connect(self):
-        self.session.post(self.login, self.data, headers=self.header)
-        print('Session connected')
-        return self
-
-    @classmethod
-    def __build_urls(cls, boards, keywords):
-        UrlInfo = namedtuple('UrlInfo', ['board', 'keyword', 'url'])
-        url_infos = []
-        for board, board_name in map(lambda x: (cls.board_map[x], x), boards):
-            for keyword in keywords:
-                for page in range(1, 3):
-                    url = cls.board_url.format(board=board, keyword=keyword, page=page)
-                    url_infos.append(UrlInfo(board_name, keyword, url))
-        return url_infos
-
-    def __get_htmls(self, url_infos):
-        print('Crawling',
-              f"from {', '.join(self.boards)}",
-              f"having {', '.join(self.keywords)} ...",
-              sep='\n\t', end=' ')
-        reqs = [grequests.get(info.url, session=self.session) for info in url_infos]
-        resps = grequests.map(reqs)
-        html_infos = []
-        HtmlInfo = namedtuple('HtmlInfo', ['board', 'keyword', 'html'])
-        for url_info, resp in zip(url_infos, resps):
-            if resp.status_code != 200:
-                continue
-            text = resp.text
-            tree = html.fromstring(text)
-            html_infos.append(HtmlInfo(url_info.board, url_info.keyword, tree))
-        print('Done')
-        return html_infos
-
-    @staticmethod
-    def __find_all(html_infos, regex=''):
-        print("Finding posts containing '%s' ..." % (regex), end=' ')
+    def _find(html_info, pattern):
+        board, keyword, tree = html_info
         posts = []
-        for board, keyword, tree in html_infos:
-            for e in zip(tree.find_class('hx'), tree.find_class('time')):
-                title = e[0].text_content().strip()
-                if not re.search(regex, title):
-                    continue
-                link = e[0].values()[0].strip()
-                find = re.findall('document_srl=(\d+)', link)
-                if not find:
-                    continue
-                pid = find[0]
-                dt = e[1].text_content().strip()
-                if ':' in dt:
-                    dt = datetime.strptime(datetime.now().strftime('%y.%m.%d ') + dt, '%y.%m.%d %H:%M')
-                else:
-                    dt = datetime.strptime(dt, '%y.%m.%d')
-                dt = dt.strftime('%Y.%m.%d %H:%M')
-                posts.append(Post(pid, title, link, board, keyword, dt))
-        print('Done')
-        return posts
-
-    @staticmethod
-    def __groupByAppend(data, keys, *fields):
-        dic = dict()
-        for d in data:
-            g = tuple([getattr(d, k) for k in keys])
-            if g not in dic:
-                for f in fields:
-                    setattr(d, f, set(getattr(d, f).split(',')))
-                dic[g] = d
+        for e in zip(tree.find_class('hx'), tree.find_class('time')):
+            title = e[0].text_content().strip()
+            if not re.search(pattern, title):
                 continue
-            for f in fields:
-                getattr(dic[g], f).add(getattr(d, f))
-        ret = dic.values()
-        for d in ret:
-            for f in fields:
-                setattr(d, f, ','.join(getattr(d, f)))
-        return ret
-
-    def __save(self, posts):
-        print('Saving posts ...')
-        updated = 0
-        inserted = 0
-        self.new_posts = []
-        for post in posts:
-            print(f'[{post.dt}] {post.title} ...', end=' ')
-            rows = self.db.select([{'id': post.id}])
-            if rows:
-                print('exists')
-                keyword = rows[0][4].split(',') + post.keyword.split(',')
-                post.keyword = ','.join(set(keyword))
-                updated += 1
+            link = e[0].values()[0].strip()
+            find = re.findall('document_srl=(\d+)', link)
+            if not find:
+                continue
+            pid = find[0]
+            dt = e[1].text_content().strip()
+            if ':' in dt:
+                dt = datetime.strptime(datetime.now().strftime('%y.%m.%d ') + dt, '%y.%m.%d %H:%M')
             else:
-                print('new')
-                self.new_posts.append(post)
-                inserted += 1
-        self.new_posts.sort(key=lambda p: p.dt)
-        self.new_posts.reverse()
-        self.db.insert(*[post.__dict__ for post in posts], force=True)
-        print(f'updated: {updated}\ninserted: {inserted}')
+                dt = datetime.strptime(dt, '%y.%m.%d')
+            dt = dt.strftime('%Y.%m.%d %H:%M')
+            posts.append(Post(pid, title, link, board, keyword, dt))
+        return posts

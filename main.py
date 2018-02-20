@@ -4,6 +4,7 @@ import argparse
 import platform
 from time import sleep
 from crawlers.snulife import Snulife
+from crawlers.ppomppu import Ppomppu
 
 
 GMAIL_ACCOUNT = '<account without @gmail.com>'
@@ -13,7 +14,7 @@ GMAIL_PASSWORD = '<password>'
 def get_args():
     description = 'new post alarm'
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument('--job', type=str, choices=['snulife'],
+    parser.add_argument('--job', type=str, choices=['snulife', 'ppomppu'],
                         help='job [snulife]')
     parser.add_argument('--user_id', type=str, required=True,
                         help='site user id')
@@ -27,10 +28,14 @@ def get_args():
                         help='receiver (ex. asd@asd.net,qwe@qwe.com)')
     parser.add_argument('--title', type=str, default='boards-notifier',
                         help='email subject')
+    parser.add_argument('--content', type=str, default='new posts',
+                        help='email content')
     parser.add_argument('--boards', type=str, default='',
-                        help='snulife boards')
+                        help='board name')
     parser.add_argument('--keywords', type=str, default='',
                         help='search keywords')
+    parser.add_argument('--n_pages', type=int, default=1,
+                        help='number of pages to look over')
     parser.add_argument('--pattern', type=str, default='',
                         help='regex pattern')
     # parser.add_argument('--keep_running', '-k', type=str2bool, default=False,
@@ -61,8 +66,13 @@ def to_unicode(s):
 def main():
     args = get_args()
     if args.job == 'snulife':
-        Snulife(args.user_id, args.password).crawl(boards=args.boards, keywords=args.keywords, regex=args.pattern)\
-            .noti(title=args.title, sender=args.sender, receiver=args.receiver, password=args.gmail_password)
+        Snulife(args.user_id, args.password)\
+            .crawl(boards=args.boards, keywords=args.keywords, pattern=args.pattern, n_pages=args.n_pages)\
+            .noti(title=args.title, sender=args.sender, receiver=args.receiver, content=args.content, password=args.gmail_password)
+    elif args.job == 'ppomppu':
+        Ppomppu()\
+            .crawl(boards=args.boards, keywords=args.keywords, pattern=args.pattern, n_pages=args.n_pages)\
+            .noti(title=args.title, sender=args.sender, receiver=args.receiver, content=args.content, password=args.gmail_password)
 
 
 if __name__ == '__main__':
