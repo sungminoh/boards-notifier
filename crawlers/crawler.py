@@ -55,7 +55,7 @@ class Crawler(object):
     @staticmethod
     def __build_content(posts, content=''):
         def post2row(post):
-            dt = datetime.strptime(post.dt, '%Y.%m.%d %H:%M')
+            dt = datetime.strptime(post.dt, '%Y.%m.%d %H:%M:%S')
             if dt.hour == 0 and dt.minute == 0:
                 dt = dt.strftime('%y.%m.%d')
             else:

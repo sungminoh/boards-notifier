@@ -16,9 +16,9 @@ def get_args():
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('--job', type=str, choices=['snulife', 'ppomppu'],
                         help='job [snulife]')
-    parser.add_argument('--user_id', type=str, required=True,
+    parser.add_argument('--user_id', type=str, required=False,
                         help='site user id')
-    parser.add_argument('--password', type=str, required=True,
+    parser.add_argument('--password', type=str, required=False,
                         help='site password')
     parser.add_argument('--sender', type=str, default='',
                         help='sender email address or gmail id')

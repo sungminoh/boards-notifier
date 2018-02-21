@@ -82,6 +82,6 @@ class Snulife(Crawler):
                 dt = datetime.strptime(datetime.now().strftime('%y.%m.%d ') + dt, '%y.%m.%d %H:%M')
             else:
                 dt = datetime.strptime(dt, '%y.%m.%d')
-            dt = dt.strftime('%Y.%m.%d %H:%M')
+            dt = dt.strftime('%Y.%m.%d %H:%M:%S')
             posts.append(Post(pid, title, link, board, keyword, dt))
         return posts
