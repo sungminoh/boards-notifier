@@ -23,7 +23,7 @@ class Ppomppu(Crawler):
     def __init__(self):
         super().__init__()
 
-    def _get_htmls(self, url_infos):
+    def _get_htmls(self, url_infos, sync):
         print('Crawling',
               f"from {', '.join(self.boards)}",
               f"having {', '.join(self.keywords)} ...",
@@ -45,14 +45,14 @@ class Ppomppu(Crawler):
         posts = []
         for e in tree.find_class('list_comment2'):
             title = e.getparent().getchildren()[0].text_content().strip()
-            if not re.search(pattern, title):
+            if not title or not re.search(pattern, title):
                 continue
-            link = e.getparent().getchildren()[0].get('href').strip()
-            find = re.findall(r'no=(\d+)', link)
-            if not find:
+            hyper_link = e.getparent().getchildren()[0].get('href')
+            find = re.findall(r'no=(\d+)', hyper_link)
+            if not hyper_link or not find:
                 continue
             pid = find[-1]
             link = self.base_url.format(board=self.board_map[board], pid=pid)
-            dt = e.getparent().getparent().getparent().getparent().getnext().get('title')
+            dt = '20' + e.getparent().getparent().getparent().getparent().getnext().get('title')
             posts.append(Post(pid, title, link, board, keyword, dt))
         return posts

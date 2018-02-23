@@ -67,12 +67,16 @@ def main():
     args = get_args()
     if args.job == 'snulife':
         Snulife(args.user_id, args.password)\
-            .crawl(boards=args.boards, keywords=args.keywords, pattern=args.pattern, n_pages=args.n_pages)\
-            .noti(title=args.title, sender=args.sender, receiver=args.receiver, content=args.content, password=args.gmail_password)
+            .crawl(boards=args.boards, keywords=args.keywords, pattern=args.pattern,
+                   n_pages=args.n_pages, sync=True)\
+            .noti(title=args.title, sender=args.sender, receiver=args.receiver,
+                  content=args.content, password=args.gmail_password, force=True)
     elif args.job == 'ppomppu':
         Ppomppu()\
-            .crawl(boards=args.boards, keywords=args.keywords, pattern=args.pattern, n_pages=args.n_pages)\
-            .noti(title=args.title, sender=args.sender, receiver=args.receiver, content=args.content, password=args.gmail_password)
+            .crawl(boards=args.boards, keywords=args.keywords, pattern=args.pattern,
+                   n_pages=args.n_pages)\
+            .noti(title=args.title, sender=args.sender, receiver=args.receiver,
+                  content=args.content, password=args.gmail_password)
 
 
 if __name__ == '__main__':
