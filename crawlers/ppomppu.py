@@ -44,10 +44,13 @@ class Ppomppu(Crawler):
         board, keyword, tree = html_info
         posts = []
         for e in tree.find_class('list_comment2'):
-            title = e.getparent().getchildren()[0].text_content().strip()
+            elements = e.getparent().getchildren();
+            title_components = re.findall(r'/images/menu/(\w+)_', elements[0].get('src') or '')
+            title_components.append(elements[-2].text_content().strip())
+            title = ' '.join(title_components)
             if not title or not re.search(pattern, title):
                 continue
-            hyper_link = e.getparent().getchildren()[0].get('href')
+            hyper_link = e.getprevious().get('href')
             find = re.findall(r'no=(\d+)', hyper_link)
             if not hyper_link or not find:
                 continue
