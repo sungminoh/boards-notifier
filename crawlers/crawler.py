@@ -14,7 +14,7 @@ from helpers import EmailHandler, DbManager
 
 class Post(object):
     def __init__(self, id, title, url, board, keyword, dt):
-        self.id = id
+        self.id = str(id)
         self.title = title
         self.url = url
         self.board = board
@@ -26,6 +26,9 @@ class Post(object):
 
     def __repr__(self):
         return str(self)
+
+    def __eq__(self, post):
+        return self.id == post.id and self.title == self.title and self.url == self.url
 
 
 class Crawler(object):
@@ -175,6 +178,7 @@ class Crawler(object):
 
     def __save(self, posts):
         print('Saving posts ...')
+        exists = 0;
         updated = 0
         inserted = 0
         self.new_posts = []
@@ -182,10 +186,15 @@ class Crawler(object):
             print(f'[{post.dt}] {post.title} ...', end=' ')
             rows = self.db.select([{'id': post.id}])
             if rows:
-                print('exists')
-                keyword = rows[0][4].split(',') + post.keyword.split(',')
-                post.keyword = ','.join(set(keyword))
-                updated += 1
+                if Post(*rows[0]) == post:
+                    print('exists')
+                    keyword = rows[0][4].split(',') + post.keyword.split(',')
+                    post.keyword = ','.join(set(keyword))
+                    exists += 1
+                else:
+                    print('updated')
+                    self.new_posts.append(post)
+                    updated += 1
             else:
                 print('new')
                 self.new_posts.append(post)
@@ -193,4 +202,4 @@ class Crawler(object):
         self.new_posts.sort(key=lambda p: p.dt)
         self.new_posts.reverse()
         self.db.insert(*[post.__dict__ for post in posts], force=True)
-        print(f'updated: {updated}\ninserted: {inserted}')
+        print(f'exists: {exists}\nupdated: {updated}\ninserted: {inserted}')
