@@ -23,23 +23,6 @@ class Ppomppu(Crawler):
     def __init__(self):
         super().__init__()
 
-    def _get_htmls(self, url_infos, sync):
-        print('Crawling',
-              f"from {', '.join(self.boards)}",
-              f"having {', '.join(self.keywords)} ...",
-              sep='\n\t', end=' ')
-        resps = [request.urlopen(info.url) for info in url_infos]
-        html_infos = []
-        HtmlInfo = namedtuple('HtmlInfo', ['board', 'keyword', 'html'])
-        for url_info, resp in zip(url_infos, resps):
-            if resp.status != 200:
-                continue
-            text = resp.read()
-            tree = html.fromstring(text)
-            html_infos.append(HtmlInfo(url_info.board, url_info.keyword, tree))
-        print('Done')
-        return html_infos
-
     def _find(self, html_info, pattern):
         board, keyword, tree = html_info
         posts = []
