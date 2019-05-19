@@ -33,7 +33,7 @@ class Snulife(Crawler):
         '원생라운지': 'postgraduate',
         '졸업생라운지': 'graduate',
         'Global Lounge': 'global',
-        '동아리홍보': 'clubad',
+        '동아리홍보': 'advertise',
         '교내행사홍보': 'schoolad',
         '독강게시판': 'lecture_community',
         '강의교환': 'lecture_exchange',
