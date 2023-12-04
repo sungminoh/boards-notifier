@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 
+import multiprocessing
 import argparse
 import platform
 from time import sleep
 from crawlers.snulife import Snulife
 from crawlers.ppomppu import Ppomppu
+from crawlers.wedding import main as wedding
 
 
 GMAIL_ACCOUNT = '<account without @gmail.com>'
@@ -14,7 +16,7 @@ GMAIL_PASSWORD = '<password>'
 def get_args():
     description = 'new post alarm'
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument('--job', type=str, choices=['snulife', 'ppomppu'],
+    parser.add_argument('--job', type=str, choices=['snulife', 'ppomppu', 'wedding'],
                         help='job [snulife]')
     parser.add_argument('--user_id', type=str, required=False,
                         help='site user id')
@@ -40,7 +42,7 @@ def get_args():
                         help='regex pattern')
     parser.add_argument('--force', '-f', default=False, action='store_true',
                         help='notify though there is no new post')
-    return parser.parse_args()
+    return parser.parse_known_args()[0]
 
 
 def str2bool(v):
@@ -73,6 +75,8 @@ def main():
                    n_pages=args.n_pages)\
             .noti(title=args.title, sender=args.sender, receivers=args.receivers,
                   content=args.content, password=args.gmail_password, force=args.force)
+    elif args.job == 'wedding':
+        wedding()
 
 
 if __name__ == '__main__':
